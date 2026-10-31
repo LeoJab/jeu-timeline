@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Timeline</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/_sdk.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header id="top">
+      <div class="logo"><span class="logo-ic">⏳</span><b>TIMELINE</b></div>
+      <div class="top-r">
+        <button id="roomchip" class="chip" hidden title="Copier le code de la salle"></button>
+        <button id="btn-react" class="chip sq" title="Réactions" hidden>😄</button>
+        <button id="btn-mute" class="chip sq" title="Son">🔊</button>
+        <button id="btn-quit" class="chip sq" title="Quitter la partie" hidden>🚪</button>
+      </div>
+    </header>
+
+    <div id="reactbar" hidden></div>
+
+    <main id="main">
+      <section id="v-home" class="view"></section>
+      <section id="v-local" class="view" hidden></section>
+      <section id="v-lobby" class="view" hidden></section>
+      <section id="v-game" class="view" hidden>
+        <div id="players"></div>
+        <div id="turnbar"></div>
+        <div id="board">
+          <div id="axis"><span>⏪ plus ancien</span><i></i><span>plus récent ⏩</span></div>
+          <div id="timeline"></div>
+        </div>
+        <div id="handwrap"><div id="hand"></div></div>
+      </section>
+    </main>
+
+    <div id="overlay" hidden></div>
+    <div id="over" hidden></div>
+    <button id="btn-results" hidden>🏆 Résultats</button>
+    <div id="flash"></div>
+    <div id="reacts"></div>
+    <div id="toast"></div>
+    <canvas id="fx"></canvas>
+  </div>
+
+  <script src="cards.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

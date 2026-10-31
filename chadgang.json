@@ -1,0 +1,10 @@
+{
+  "title": "Timeline",
+  "description": "Place les événements dans le bon ordre chronologique : le premier à vider sa main gagne !",
+  "author": "ChadGang",
+  "category": "Cartes",
+  "emoji": "⏳",
+  "joueurs": "2-8",
+  "image": "cover.png",
+  "classement": "victoires"
+}
