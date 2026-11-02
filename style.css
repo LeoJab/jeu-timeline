@@ -270,3 +270,13 @@ details ul { margin: 8px 0 2px; padding-left: 18px; font-weight: 700; font-size:
 #zoom .zc { --cw: 230px; --ch: 330px; animation: stin .25s ease-out; }
 #zoom .zcap { color: #cfd3ff; font-size: 13px; }
 @media (max-height: 620px) { #zoom .zc { --cw: 170px; --ch: 244px; } }
+
+/* ===== choix du mode (normal / extrême) ===== */
+.modes { display: flex; gap: 8px; margin: 12px 0 4px; }
+.mode { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; background: #f1f1ff; border: 4px solid var(--ink);
+  border-radius: 14px; font-size: 16px; opacity: .65; box-shadow: 2px 2px 0 var(--ink); }
+.mode small { font-size: 12px; color: #6a67a0; font-weight: 700; }
+.mode.sel { background: var(--yellow); opacity: 1; box-shadow: var(--sh); transform: translateY(-2px); }
+.mode.sel small { color: var(--ink); }
+.mode[disabled] { cursor: default; }
+.hint { font-size: 12px; margin: 2px 0 0; }

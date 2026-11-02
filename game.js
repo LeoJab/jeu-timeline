@@ -133,6 +133,15 @@ let pend = null;       // emplacement choisi (en attente de validation)
 let fresh = null;      // carte qui vient d'être posée (animation)
 let dinged = 0, overShown = null, reported = null, hideOver = false;
 let localNames = ['Joueur 1', 'Joueur 2'];
+let optMode = store.get('tl_mode') === 'extreme' ? 'extreme' : 'normal'; // choix de l'hôte (ou du mode même écran)
+let lobbyMode = 'normal';                                              // mode annoncé par l'hôte aux autres joueurs
+
+/* choix du mode de jeu : normal = dates visibles dans la main, extrême = dates cachées */
+function modePicker(cur, editable) {
+  const b = (m, t, d) => `<button class="mode${cur === m ? ' sel' : ''}" ${editable ? `data-act="mode" data-m="${m}"` : 'disabled'}><b>${t}</b><small>${d}</small></button>`;
+  return `<div class="modes">${b('normal', '🙂 Normal', 'dates visibles')}${b('extreme', '🔥 Extrême', 'dates cachées')}</div>` +
+    (editable ? '' : '<p class="hint">Mode choisi par l’hôte</p>');
+}
 
 const isSpectator = () => Net.online && !(V && V.order.includes(Net.me));
 const curId = () => (V && V.phase === 'play' ? V.order[V.cur] : null);
@@ -141,13 +150,13 @@ const isMyTurn = () => !!V && V === S && V.phase === 'play' && !isSpectator() &&
 const myHand = () => { const id = myId(); return V && id && V.hands[id] ? V.hands[id] : []; };
 
 /* ---------- logique du jeu ---------- */
-function newGame(list) {
+function newGame(list, mode) {
   const deck = shuffle(CARDS.map(c => c.id));
   const n = list.length, size = n <= 3 ? 6 : n <= 5 ? 5 : 4; // règle officielle
   const tl = [deck.pop()];
   const hands = {}, stats = {}, names = {};
   list.forEach(p => { hands[p.id] = deck.splice(0, size); stats[p.id] = { ok: 0, ko: 0, streak: 0, best: 0 }; names[p.id] = p.name; });
-  return { ver: 0, phase: 'play', gid: `${Net.room || 'LOCAL'}-${Date.now().toString(36)}`, names, order: shuffle(list.map(p => p.id)),
+  return { ver: 0, phase: 'play', mode: mode === 'extreme' ? 'extreme' : 'normal', gid: `${Net.room || 'LOCAL'}-${Date.now().toString(36)}`, names, order: shuffle(list.map(p => p.id)),
     cur: 0, round: 1, tl, hands, deck, stats, last: null, log: [], win: null, note: null };
 }
 
@@ -309,6 +318,7 @@ function renderLocal() {
     <div class="plist">${localNames.map((n, i) => `<div class="pitem"><span class="av" style="background:${colorOf('L' + i)}">${esc(initial(n))}</span>
       <input data-i="${i}" maxlength="14" value="${esc(n)}" aria-label="Pseudo">${localNames.length > 1 ? `<button class="x" data-act="rm" data-i="${i}">✖</button>` : ''}</div>`).join('')}</div>
     ${localNames.length < 6 ? '<button class="btn alt" data-act="add">➕ Ajouter un joueur</button>' : ''}
+    ${modePicker(optMode, true)}
     <button class="btn" data-act="start-local">🚀 Lancer la partie</button></div>`;
 }
 
@@ -320,6 +330,7 @@ function renderLobby() {
     <p>Invite tes potes avec le bouton <b>Inviter</b> du hub, ou donne-leur ce code.</p>
     <div class="plist">${Net.players.map((p, i) => `<div class="pitem">${avatar(p.id, p.name)}<b>${esc(p.name)}</b>${i === 0 ? '<small>👑 hôte</small>' : ''}${p.id === Net.me ? '<small>toi</small>' : ''}</div>`).join('')}</div>
     <p>${n} joueur${n > 1 ? 's' : ''} · ${n >= 2 ? `${n <= 3 ? 6 : n <= 5 ? 5 : 4} cartes chacun` : 'il faut au moins 2 joueurs'}</p>
+    ${modePicker(host ? optMode : lobbyMode, host)}
     ${host ? `<button class="btn" data-act="start" ${n < 2 ? 'disabled' : ''}>🚀 Lancer la partie</button>` : '<p>⏳ L’hôte lance la partie…</p>'}
     <details><summary>Comment jouer ?</summary><ul>
       <li>Choisis une carte, puis touche l’endroit de la frise où elle va.</li>
@@ -329,7 +340,7 @@ function renderLobby() {
 
 function renderGame() {
   renderPlayers(); renderTurn(); renderLog(); renderTimeline(); renderHand(); renderOver();
-  $('#axinfo').textContent = V.phase === 'play' ? `Manche ${V.round} · pioche ${V.deck.length}` : '';
+  $('#axinfo').textContent = V.phase === 'play' ? `Manche ${V.round} · pioche ${V.deck.length}${V.mode === 'extreme' ? ' · 🔥 Extrême' : ''}` : '';
 }
 
 /* historique des derniers coups */
@@ -388,7 +399,7 @@ function renderTimeline() {
 
 function renderHand() {
   const h = myHand(), mine = isMyTurn();
-  $('#hand').innerHTML = h.length ? h.map(cid => cardHtml(cid, { hide: true, cls: 'hand' + (sel === cid ? ' sel' : '') })).join('')
+  $('#hand').innerHTML = h.length ? h.map(cid => cardHtml(cid, { hide: V.mode === 'extreme', cls: 'hand' + (sel === cid ? ' sel' : '') })).join('')
     : `<div class="nohand">${isSpectator() ? '👀 Tu regardes la partie, tu joueras à la prochaine !' : V.phase === 'play' ? '🏁 Plus de cartes !' : ''}</div>`;
   $('#handwrap').classList.toggle('dim', !mine);
   requestAnimationFrame(handMore);
@@ -425,14 +436,14 @@ async function playReveal(L, T) {
   ov.innerHTML = `<div class="stage"><div class="who"><b>${esc(who)}</b> place<br>« ${esc(c.t)} »</div>
     <div class="rrow">${nb(L.l, -1)}
       <div class="flipper"><div class="fi">
-        <div class="face fr">${cardHtml(L.c, { hide: true })}</div>
+        <div class="face fr">${cardHtml(L.c, { hide: T.mode === 'extreme' })}</div>
         <div class="face bk">${cardHtml(L.c, { cls: L.ok ? 'good' : 'bad' })}</div>
       </div></div>${nb(L.r, 1)}</div>
     <div class="verdict" id="verdict"></div><div class="skip">touche pour accélérer</div></div>`;
   ov.hidden = false;
   ov.onclick = () => { fast = true; };
   Snd.place(); await wait(650);
-  ov.classList.add('roll'); Snd.roll(); await wait(950);
+  ov.classList.add('roll'); Snd.roll(); await wait(T.mode === 'extreme' ? 950 : 600);
   ov.classList.remove('roll'); ov.classList.add('rev'); Snd.flip(); await wait(750);
   const st = T.stats[L.p], left = T.hands[L.p].length, v = $('#verdict', ov);
   const r = $('.flipper', ov).getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
@@ -488,11 +499,15 @@ function connect(code, create) {
     if (st && (!S || st.ver > S.ver)) { if (!S) { S = st; V = null; } else receive(st); pump(); }
     render();
   });
-  r.on('players', list => { Net.players = list || []; if (V || S) { render(); checkAbsent(); } else render(); });
+  r.on('players', list => { Net.players = list || []; sendMode(); if (V || S) { render(); checkAbsent(); } else render(); });
   r.on('message', (d, from) => {
     if (!d) return;
     if (d.t === 'state') receive(d.s);
     else if (d.t === 'react' && from && from.id !== Net.me) floatReact(d.e, from.name);
+    else if (d.t === 'opt' && from && Net.players[0] && from.id === Net.players[0].id && from.id !== Net.me) {
+      lobbyMode = d.m === 'extreme' ? 'extreme' : 'normal';
+      if (!V || V.phase === 'lobby') render();
+    }
   });
   r.on('error', msg => {
     const m = String(msg || 'Erreur de salle');
@@ -540,15 +555,22 @@ function action(a, el) {
   else if (a === 'start-local') {
     syncLocalNames();
     const list = localNames.map((n, i) => ({ id: 'L' + i, name: n.trim() || 'Joueur ' + (i + 1) }));
-    S = null; V = null; commit(newGame(list));
+    S = null; V = null; commit(newGame(list, optMode));
+  } else if (a === 'mode') {
+    optMode = el.dataset.m === 'extreme' ? 'extreme' : 'normal'; store.set('tl_mode', optMode); Snd.pick();
+    if (Net.online) { sendMode(); renderLobby(); } else { syncLocalNames(); renderLocal(); }
   } else if (a === 'start') {
-    if (Net.players.length >= 2 && Net.players[0].id === Net.me) commit(newGame(Net.players.map(p => ({ id: p.id, name: p.name }))));
+    if (Net.players.length >= 2 && Net.players[0].id === Net.me) commit(newGame(Net.players.map(p => ({ id: p.id, name: p.name })), optMode));
   } else if (a === 'go') { if (sel !== null && pend !== null) doMove(sel, pend); }
   else if (a === 'again') {
     FX.stop(); overShown = null;
     commit({ phase: 'lobby', order: [], gid: null });
     if (!Net.online) { S = null; V = null; render(); }
   } else if (a === 'hide-over') { hideOver = true; renderOver(); }
+}
+
+function sendMode() { // message éphémère : les invités voient le mode choisi dans la salle d'attente
+  if (Net.online && Net.conn && Net.players[0] && Net.players[0].id === Net.me) Net.conn.send({ t: 'opt', m: optMode });
 }
 
 function syncLocalNames() { document.querySelectorAll('#v-local input[data-i]').forEach(i => { localNames[+i.dataset.i] = i.value; }); }
