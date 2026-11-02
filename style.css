@@ -271,12 +271,38 @@ details ul { margin: 8px 0 2px; padding-left: 18px; font-weight: 700; font-size:
 #zoom .zcap { color: #cfd3ff; font-size: 13px; }
 @media (max-height: 620px) { #zoom .zc { --cw: 170px; --ch: 244px; } }
 
-/* ===== choix du mode (normal / extrême) ===== */
-.modes { display: flex; gap: 8px; margin: 12px 0 4px; }
-.mode { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; background: #f1f1ff; border: 4px solid var(--ink);
-  border-radius: 14px; font-size: 16px; opacity: .65; box-shadow: 2px 2px 0 var(--ink); }
-.mode small { font-size: 12px; color: #6a67a0; font-weight: 700; }
-.mode.sel { background: var(--yellow); opacity: 1; box-shadow: var(--sh); transform: translateY(-2px); }
-.mode.sel small { color: var(--ink); }
-.mode[disabled] { cursor: default; }
-.hint { font-size: 12px; margin: 2px 0 0; }
+/* ===== panneau d'historique à droite ===== */
+#hist { position: fixed; top: 52px; bottom: 0; right: 0; width: min(88vw, 320px); z-index: 40; background: #fff; border-left: 4px solid var(--ink);
+  box-shadow: -6px 0 0 rgba(18,16,43,.3); transform: translateX(110%); transition: transform .25s ease; display: flex; flex-direction: column; border-top-left-radius: 18px; }
+#app.hist-open #hist { transform: none; }
+#v-lobby ~ #hist, #hist:empty { display: none; }
+.hh { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 4px solid var(--ink); font-size: 17px; }
+.hh .chip { min-height: 30px; width: 32px; font-size: 14px; }
+.hbody { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 10px 20px; }
+.hs { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; background: #f1f1ff; border: 3px solid var(--ink); border-radius: 10px; }
+.hs td { padding: 3px 6px; border-bottom: 1px dashed #c9c9e8; white-space: nowrap; }
+.hs td:first-child { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+.hrow { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 7px; border: 3px solid var(--ink); border-radius: 12px; background: #f1f1ff; cursor: zoom-in; }
+.hrow.ok { border-left: 9px solid var(--green); }
+.hrow.ko { border-left: 9px solid var(--red); background: #fff1f2; }
+.hrow.mine { box-shadow: 0 0 0 3px var(--yellow); }
+.hem { font-size: 24px; flex: none; }
+.ht { flex: 1; min-width: 0; font-size: 12px; line-height: 1.15; font-weight: 700; }
+.ht b { display: block; font-size: 12px; font-weight: 900; }
+.hy { flex: none; font-size: 13px; text-align: right; max-width: 70px; line-height: 1.1; }
+.hn { position: absolute; top: -9px; right: 6px; background: var(--ink); color: #fff; border-radius: 6px; padding: 0 5px; font-size: 9px; }
+.hempty { text-align: center; color: #6a67a0; font-size: 13px; }
+#btn-hist span { font-size: 12px; }
+@media (min-width: 1000px) {
+  #app.hist-open #main { padding-right: 320px; }
+}
+
+/* barre du haut compacte sur téléphone */
+@media (max-width: 430px) {
+  .logo b { display: none; }
+  .logo { font-size: 26px; }
+  .chip.sq { width: 34px; }
+  #btn-hist { padding: 0 8px; }
+  .top-r { gap: 5px; }
+  #btn-results { bottom: 56px; }
+}
