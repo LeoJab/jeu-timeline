@@ -231,3 +231,42 @@ details ul { margin: 8px 0 2px; padding-left: 18px; font-weight: 700; font-size:
 @media (prefers-reduced-motion: reduce) {
   .logo-ic, .pl.act, .tb.mine, .slot.on span, .trophy { animation: none; }
 }
+
+/* ===== améliorations de l'interface en jeu ===== */
+#roomchip { font-size: 14px; padding: 2px 10px; letter-spacing: 1px; }
+.pl { position: relative; }
+.pl .res { position: absolute; top: -9px; right: -3px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid var(--ink);
+  display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; color: #fff; z-index: 2; animation: stin .4s; }
+.pl .res.ok { background: var(--green); } .pl .res.ko { background: var(--red); }
+
+#turnbar { flex-wrap: wrap; align-items: center; gap: 8px; }
+.tb { max-width: 100%; }
+.tb b { overflow-wrap: anywhere; }
+.tb.sm { background: var(--white); color: var(--ink); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font-size: 13px; line-height: 1.25; padding: 5px 12px; }
+
+#log { flex: none; display: flex; justify-content: center; gap: 6px; padding: 0 8px 6px; overflow: hidden; flex-wrap: nowrap; }
+#log:empty { display: none; }
+.lg { flex: 0 1 auto; min-width: 0; max-width: 34%; background: rgba(255,255,255,.14); color: #fff; border-radius: 999px; padding: 2px 9px;
+  font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: stin .4s; }
+.lg.ok { border: 2px solid rgba(74,222,128,.7); } .lg.ko { border: 2px solid rgba(255,107,122,.8); }
+.lg b { color: var(--yellow); }
+.lg:not(:first-child) { opacity: .7; }
+
+#axis em { font-style: normal; color: var(--yellow); white-space: nowrap; font-size: 11px; }
+#axis i:last-of-type { flex: 1; }
+#timeline, #axis { max-width: 1250px; margin-left: auto; margin-right: auto; }
+#timeline .card { cursor: zoom-in; }
+#timeline .card:hover { transform: translateY(-3px); transition: transform .15s; }
+
+@media (max-width: 699px) and (min-height: 621px) {
+  #timeline.sparse { --cw: 104px; --ch: 152px; }
+}
+
+#handwrap { position: relative; background: linear-gradient(0deg, rgba(10,8,60,.45), transparent); }
+#handwrap.more::after { content: "›"; position: absolute; right: 0; top: 18px; bottom: 8px; width: 30px; display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 6px; font-size: 34px; color: #fff; background: linear-gradient(90deg, transparent, rgba(18,16,43,.7)); pointer-events: none; text-shadow: 2px 2px 0 var(--ink); }
+
+#zoom { position: fixed; inset: 0; z-index: 80; background: rgba(10,8,40,.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer; }
+#zoom .zc { --cw: 230px; --ch: 330px; animation: stin .25s ease-out; }
+#zoom .zcap { color: #cfd3ff; font-size: 13px; }
+@media (max-height: 620px) { #zoom .zc { --cw: 170px; --ch: 244px; } }

@@ -148,7 +148,7 @@ function newGame(list) {
   const hands = {}, stats = {}, names = {};
   list.forEach(p => { hands[p.id] = deck.splice(0, size); stats[p.id] = { ok: 0, ko: 0, streak: 0, best: 0 }; names[p.id] = p.name; });
   return { ver: 0, phase: 'play', gid: `${Net.room || 'LOCAL'}-${Date.now().toString(36)}`, names, order: shuffle(list.map(p => p.id)),
-    cur: 0, round: 1, tl, hands, deck, stats, last: null, win: null, note: null };
+    cur: 0, round: 1, tl, hands, deck, stats, last: null, log: [], win: null, note: null };
 }
 
 function advance(s) {
@@ -174,6 +174,7 @@ function doMove(cid, slot) {
   if (ok) { s.tl.splice(slot, 0, cid); st.ok++; st.streak++; st.best = Math.max(st.best, st.streak); }
   else { st.ko++; st.streak = 0; if (s.deck.length) { L.draw = s.deck.pop(); s.hands[pid].push(L.draw); } }
   s.last = L;
+  s.log = (s.log || []).concat([{ p: pid, c: cid, ok }]).slice(-5);
   advance(s);
   commit(s);
 }
@@ -271,7 +272,9 @@ function render() {
   $('#roomchip').hidden = !Net.online; $('#roomchip').textContent = Net.online ? `🔑 ${Net.room}` : '';
   $('#btn-react').hidden = !(Net.online && inGame);
   $('#btn-quit').hidden = !(Net.online || Net.local);
-  if (!inGame) $('#reactbar').hidden = true;
+  if (!inGame) { // sortie de partie (ex. « Rejouer ») : on retire résultats et popups
+    $('#reactbar').hidden = true; $('#over').hidden = true; $('#btn-results').hidden = true; $('#zoom').hidden = true; FX.stop();
+  }
   if (name === 'home') renderHome();
   else if (name === 'local') renderLocal();
   else if (name === 'lobby') renderLobby();
@@ -325,14 +328,33 @@ function renderLobby() {
 }
 
 function renderGame() {
-  renderPlayers(); renderTurn(); renderTimeline(); renderHand(); renderOver();
+  renderPlayers(); renderTurn(); renderLog(); renderTimeline(); renderHand(); renderOver();
+  $('#axinfo').textContent = V.phase === 'play' ? `Manche ${V.round} · pioche ${V.deck.length}` : '';
 }
+
+/* historique des derniers coups */
+function renderLog() {
+  const items = (V.log || []).slice(-3).reverse();
+  $('#log').innerHTML = items.map(l => `<span class="lg ${l.ok ? 'ok' : 'ko'}">${l.ok ? '✔' : '✘'} <b>${esc(V.names[l.p] || '?')}</b> · ${esc(CARDS[l.c].t)} (${fmtYear(CARDS[l.c].y)})</span>`).join('');
+}
+
+/* aperçu agrandi d'une carte de la frise */
+function zoomCard(cid) {
+  const z = $('#zoom'), c = CARDS[cid];
+  z.innerHTML = `${cardHtml(cid, { cls: 'zc' })}<div class="zcap">${CAT[c.c].n} · touche pour fermer</div>`;
+  z.hidden = false; Snd.pick();
+}
+const gapText = i => {
+  const t = V.tl, l = i > 0 ? CARDS[t[i - 1]].y : null, r = i < t.length ? CARDS[t[i]].y : null;
+  return l === null ? `Avant <b>${fmtYear(r)}</b>` : r === null ? `Après <b>${fmtYear(l)}</b>` : `Entre <b>${fmtYear(l)}</b> et <b>${fmtYear(r)}</b>`;
+};
 
 function renderPlayers() {
   $('#players').innerHTML = V.order.map((id, i) => {
     const n = V.names[id], cnt = V.hands[id].length, st = V.stats[id];
     const act = V.phase === 'play' && i === V.cur, gone = Net.online && !Net.players.some(p => p.id === id);
-    return `<div class="pl${act ? ' act' : ''}${gone ? ' gone' : ''}${id === Net.me ? ' me' : ''}${cnt === 1 ? ' last1' : ''}${cnt === 0 ? ' zero' : ''}">` +
+    const res = V.last && V.last.p === id ? `<i class="res ${V.last.ok ? 'ok' : 'ko'}">${V.last.ok ? '✔' : '✘'}</i>` : '';
+    return `<div class="pl${act ? ' act' : ''}${gone ? ' gone' : ''}${id === Net.me ? ' me' : ''}${cnt === 1 ? ' last1' : ''}${cnt === 0 ? ' zero' : ''}">${res}` +
       `${avatar(id, n)}<div class="pn"><b>${esc(n)}</b><small>${st.streak >= 2 ? '🔥×' + st.streak : gone ? 'absent' : cnt === 1 ? '⚠️ 1 carte !' : ''}</small></div>` +
       `<span class="cnt">${cnt === 0 ? '🏁' : cnt}</span></div>`;
   }).join('');
@@ -344,9 +366,10 @@ function renderTurn() {
   const who = V.names[curId()];
   if (isMyTurn()) {
     const lead = Net.online ? 'À TOI !' : `${esc(who)}, à toi !`;
+    const title = sel !== null ? esc(CARDS[sel].t) : '';
     if (sel === null) el.innerHTML = `<div class="tb mine">🎯 <b>${lead}</b> Choisis une carte de ta main</div>`;
-    else if (pend === null) el.innerHTML = '<div class="tb mine">👆 Touche l’endroit où la placer dans la frise</div>';
-    else el.innerHTML = '<button class="tb go" data-act="go">✔ VALIDER</button>';
+    else if (pend === null) el.innerHTML = `<div class="tb mine">👆 « <b>${title}</b> » : touche sa place dans la frise</div>`;
+    else el.innerHTML = `<div class="tb sm">📍 « ${title} »<br>${gapText(pend)}</div><button class="tb go" data-act="go">✔ VALIDER</button>`;
   } else {
     el.innerHTML = isSpectator() ? `<div class="tb">👀 Tu regardes · tour de <b>${esc(who)}</b></div>` : `<div class="tb">⏳ Tour de <b>${esc(who)}</b>…</div>`;
   }
@@ -357,7 +380,9 @@ function renderTimeline() {
   const slot = i => `<button class="slot${on ? ' on' : ''}${pend === i ? ' pick' : ''}" data-i="${i}" aria-label="Placer ici" ${on ? '' : 'tabindex="-1"'}><span>${pend === i ? '✔' : '+'}</span></button>`;
   let h = '';
   V.tl.forEach((cid, i) => { h += slot(i) + cardHtml(cid, { cls: cid === fresh ? 'drop' : '' }); });
-  $('#timeline').innerHTML = h + slot(V.tl.length);
+  const tlEl = $('#timeline');
+  tlEl.className = V.tl.length <= 4 ? 'sparse' : '';
+  tlEl.innerHTML = h + slot(V.tl.length);
   if (fresh !== null) { const el = $(`#timeline .card[data-id="${fresh}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 }
 
@@ -366,6 +391,13 @@ function renderHand() {
   $('#hand').innerHTML = h.length ? h.map(cid => cardHtml(cid, { hide: true, cls: 'hand' + (sel === cid ? ' sel' : '') })).join('')
     : `<div class="nohand">${isSpectator() ? '👀 Tu regardes la partie, tu joueras à la prochaine !' : V.phase === 'play' ? '🏁 Plus de cartes !' : ''}</div>`;
   $('#handwrap').classList.toggle('dim', !mine);
+  requestAnimationFrame(handMore);
+}
+
+/* petit dégradé quand la main déborde (il reste des cartes à faire défiler) */
+function handMore() {
+  const h = $('#hand'); if (!h) return;
+  $('#handwrap').classList.toggle('more', h.scrollWidth - h.clientWidth - h.scrollLeft > 8);
 }
 
 function renderOver() {
@@ -485,6 +517,9 @@ function onClick(e) {
   const t = e.target;
   const act = t.closest('[data-act]');
   if (act) return action(act.dataset.act, act);
+  if (t.closest('#zoom')) { $('#zoom').hidden = true; return; }
+  const tc = t.closest('#timeline .card');
+  if (tc) return zoomCard(+tc.dataset.id);
   const card = t.closest('.card.hand');
   if (card) { if (!isMyTurn()) return; const id = +card.dataset.id; sel = sel === id ? null : id; pend = null; Snd.pick(); renderTurn(); renderTimeline(); renderHand(); return; }
   const slot = t.closest('.slot');
@@ -522,6 +557,8 @@ function syncLocalNames() { document.querySelectorAll('#v-local input[data-i]').
 async function boot() {
   Snd.init(); FX.init();
   document.addEventListener('click', onClick);
+  $('#hand').addEventListener('scroll', handMore, { passive: true });
+  addEventListener('resize', handMore);
   $('#btn-mute').onclick = () => Snd.toggle();
   $('#btn-results').onclick = () => { hideOver = false; renderOver(); };
   let quitArm = 0; // double appui pour quitter (pas de popup dans l'iframe)
