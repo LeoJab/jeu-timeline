@@ -122,7 +122,7 @@ function shake() { const a = $('#app'); a.classList.remove('shake'); void a.offs
 function flash(kind) { const f = $('#flash'); f.className = ''; void f.offsetWidth; f.className = kind; }
 let toastT = 0;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
-function vib(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) { /* ignore */ } }
+function vib(p) { try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(p); } catch (e) { /* ignore */ } }
 
 /* ---------- état global ---------- */
 const Net = { online: false, local: false, room: null, me: null, players: [], conn: null, profile: null };
@@ -259,7 +259,7 @@ function avatar(id, name) {
 function cardHtml(cid, o = {}) {
   const c = CARDS[cid], cat = CAT[c.c], y = o.hide ? '????' : fmtYear(c.y);
   return `<div class="card ${o.cls || ''}" data-id="${cid}" style="--cat:${cat.c}"><div class="yr${y.length > 6 ? ' long' : ''}">${y}</div>` +
-    `<div class="em">${c.e}</div><div class="tt">${esc(c.t)}</div><div class="ct">${cat.n}</div></div>`;
+    `<div class="em">${c.e}</div><div class="tt${c.t.length > 38 ? ' lg' : ''}">${esc(c.t)}</div><div class="ct">${cat.n}</div></div>`;
 }
 
 const VIEWS = ['home', 'local', 'lobby', 'game'];
