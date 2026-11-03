@@ -244,13 +244,6 @@ details ul { margin: 8px 0 2px; padding-left: 18px; font-weight: 700; font-size:
 .tb b { overflow-wrap: anywhere; }
 .tb.sm { background: var(--white); color: var(--ink); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font-size: 13px; line-height: 1.25; padding: 5px 12px; }
 
-#log { flex: none; display: flex; justify-content: center; gap: 6px; padding: 0 8px 6px; overflow: hidden; flex-wrap: nowrap; }
-#log:empty { display: none; }
-.lg { flex: 0 1 auto; min-width: 0; max-width: 34%; background: rgba(255,255,255,.14); color: #fff; border-radius: 999px; padding: 2px 9px;
-  font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: stin .4s; }
-.lg.ok { border: 2px solid rgba(74,222,128,.7); } .lg.ko { border: 2px solid rgba(255,107,122,.8); }
-.lg b { color: var(--yellow); }
-.lg:not(:first-child) { opacity: .7; }
 
 #axis em { font-style: normal; color: var(--yellow); white-space: nowrap; font-size: 11px; }
 #axis i:last-of-type { flex: 1; }
@@ -311,17 +304,16 @@ details ul { margin: 8px 0 2px; padding-left: 18px; font-weight: 700; font-size:
 body { background: linear-gradient(160deg, #2f3fff 0%, #2433f2 45%, #1b27c9 100%); }
 #bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
   background: radial-gradient(ellipse at 50% 120%, rgba(10,8,70,.55), transparent 60%); }
-#bg::after { content: ""; position: absolute; inset: 0; /* fines graduations de frise, à peine visibles */
-  background: repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 2px, transparent 2px 64px);
-  -webkit-mask: linear-gradient(180deg, transparent 55%, #000 100%); mask: linear-gradient(180deg, transparent 55%, #000 100%); }
 #bg b { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .5; }
 #bg .b1 { width: 60vmax; height: 60vmax; left: -20vmax; top: -25vmax; background: #5d6cff; animation: bgfloat 26s ease-in-out infinite alternate; }
 #bg .b2 { width: 50vmax; height: 50vmax; right: -18vmax; bottom: -22vmax; background: #ffd426; opacity: .16; animation: bgfloat 32s ease-in-out infinite alternate-reverse; }
 @keyframes bgfloat { to { transform: translate(7vmax, 5vmax) scale(1.1); } }
-#bg i { position: absolute; left: var(--x); top: 105%; font-style: normal; font-weight: 900; font-size: var(--s); letter-spacing: 2px;
-  color: transparent; -webkit-text-stroke: 2px rgba(255,255,255,.09); animation: yrise var(--d) linear infinite; animation-delay: var(--o); white-space: nowrap; }
-@keyframes yrise { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-125vh) rotate(6deg); } }
 #top, #main { position: relative; z-index: 1; }
 #board { background: rgba(10,8,70,.22); backdrop-filter: blur(2px); }
-@media (prefers-reduced-motion: reduce) { #bg b, #bg i { animation: none; } #bg i { top: 40%; } }
-.card .tt.lg { font-size: calc(var(--cw) * .108); line-height: 1.08; }
+@media (prefers-reduced-motion: reduce) { #bg b, #fresque { animation: none; } }
+.card .tt.xl { font-size: calc(var(--cw) * .108); line-height: 1.08; }
+
+/* fresque de l'histoire sur tout l'écran : traits très fins, quasi invisibles, dérive lente en diagonale */
+#fresque { --tw: clamp(820px, 88vw, 1400px); position: absolute; inset: 0; opacity: .1;
+  background: url(fresque.svg) 0 0 / var(--tw) auto repeat; animation: frieze 700s linear infinite; }
+@keyframes frieze { to { background-position: calc(var(--tw) * -1) calc(var(--tw) * -.5556); } }

@@ -259,7 +259,7 @@ function avatar(id, name) {
 function cardHtml(cid, o = {}) {
   const c = CARDS[cid], cat = CAT[c.c], y = o.hide ? '????' : fmtYear(c.y);
   return `<div class="card ${o.cls || ''}" data-id="${cid}" style="--cat:${cat.c}"><div class="yr${y.length > 6 ? ' long' : ''}">${y}</div>` +
-    `<div class="em">${c.e}</div><div class="tt${c.t.length > 38 ? ' lg' : ''}">${esc(c.t)}</div><div class="ct">${cat.n}</div></div>`;
+    `<div class="em">${c.e}</div><div class="tt${c.t.length > 38 ? ' xl' : ''}">${esc(c.t)}</div><div class="ct">${cat.n}</div></div>`;
 }
 
 const VIEWS = ['home', 'local', 'lobby', 'game'];
